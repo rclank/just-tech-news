@@ -35,7 +35,7 @@ router.get('/:id', (req, res) => {
         });
 });
 
-// POST /api/users
+// POST /api/users; creates new user
 router.post('/', (req, res) => {
     // expects {username: 'xxxx', email: 'xxxx@xxx.xxx', password: 'xxxxx'}
     User.create({
@@ -50,12 +50,39 @@ router.post('/', (req, res) => {
         });
 });
 
-// PUT /api/users/1
+router.post('/login', (req, res) => {
+    // expects {username: 'xxxx', email: 'xxxx@xxx.xxx', password: 'xxxxx'}
+    User.findOne({
+        where: {
+            email: req.body.email
+        }
+    }).then(dbUserData => {
+        if (!dbUserData) {
+            res.status(400).json({ message: 'No user with that email address!' });
+            return;
+        }
+        
+        // res.json({ user: dbUserData });
+
+        // verify user
+        const validPassword = dbUserData.checkPassword(req.body.password);
+
+        if(!validPassword) {
+            res.status(400).json({ message: 'Incorrect password!' });
+            return;
+        }
+
+        res.json({ user: dbUserData, message: 'You are now logged in!' });
+    });
+});
+
+// PUT /api/users/1; updates data on existing user
 router.put('/:id', (req, res) => {
     // expects {username: 'xxxx', email: 'xxxx@xxx.xxx', password: 'xxxxx'}
 
     // if req.body has exact key/value pairs to match the model, you can just use 'req.body' instead
     User.update(req.body, {
+        individualHooks: true,
         where: {
             id: req.params.id
         }
